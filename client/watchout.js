@@ -40,3 +40,21 @@ var moveAsteroids = function() {
 }
 
 setInterval(moveAsteroids, 1000);
+
+var player = board.append('circle')
+          .data([{x: width/2, y: height/2}])
+          .attr('class', 'player')
+          .attr('cx', function(d) { return d.x; })
+          .attr('cy', function(d) { return d.y; })
+          .attr('r', 10)
+          .attr('stroke', 'black')
+          .attr('stroke-width', 3)
+          .attr('fill', 'red');
+
+board.on('mousemove', function(){
+  var mouse = d3.mouse(this);
+  d3.select('.player')
+    .data([{'x': mouse[0], 'y': mouse[1]}])
+    .attr('cx', function(d) { return d.x; })
+    .attr('cy', function(d) { return d.y; });
+})
