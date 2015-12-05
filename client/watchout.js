@@ -10,14 +10,27 @@ var collision = 0;
 var nEnemies = 30;
 var asteroidData = [];
 var asteroids; 
+var once = function(func) {
+  var ran = false, 
+      memo;
+  return function() {
+    if (ran) 
+      return memo;
+    ran = true;
+    memo = func.apply(this, arguments);
+    func = null;
+    return memo;
+  };
+};
 
 var getRandomX = function() {
-  return Math.max(0, Math.random() * width - 50);
+  return Math.max(0, Math.random() * width - 25);
 };
 
 var getRandomY = function() {
-  return Math.max(0, Math.random() * height - 50);
+  return Math.max(0, Math.random() * height - 25);
 };
+
 
 for(var i = 0; i < nEnemies; i++)   {
   asteroidData.push({
@@ -35,6 +48,7 @@ asteroids = board.selectAll('image')
         .attr('xlink:href', 'asteroid.png')
         .attr('x', function(d) { return d.x; })
         .attr('y', function(d) { return d.y; })
+        .attr('r', function(d) { return d.r; })
         .attr('height', function(d) { return d.r*2; })
         .attr('width', function(d) { return d.r*2; });
 
@@ -42,8 +56,8 @@ asteroids = board.selectAll('image')
 var moveAsteroids = function() {
   asteroids
     .transition()
-    .tween('attr', tweenWithCollisions)
     .duration(2000)
+    .tween('custom', tweenWithCollisions)
 }
 
 setInterval(moveAsteroids, 1000);
@@ -67,35 +81,33 @@ board.on('mousemove', function(){
 ;})
 
 var checkCollision =function(enemy, callback)  {
-  var player = window.player.data()[0];
-  var radius = parseFloat(enemy.attr('r')) + 10;
-  var xDiff = parseFloat(enemy.attr('x'))- player.x
-  var yDiff = parseFloat(enemy.attr('y')) - player.y
-
+  var player = d3.select('.player');//window.player.data()[0];
+  var radius = parseFloat(enemy.attr('r')) + parseFloat(player.attr('r'));
+  var xDiff = parseFloat(enemy.attr('x'))- parseFloat(player.attr('cx'));
+  var yDiff = parseFloat(enemy.attr('y')) - parseFloat(player.attr('cy'));
   var separation = Math.sqrt( Math.pow(xDiff,2) + Math.pow(yDiff,2));
- 
-  if (separation < radius*2) {
+
+  if (separation < radius) {
     score = 0;
     d3.select('.collisions span').text(++collision);
   }
 }
 
-var tweenWithCollisions = function(enemy) {
+var tweenWithCollisions = function(enemy, i) {
   var enemy1 = d3.select(this);
-  console.log('inside ', enemy);
-  startPos = {
-    x: enemy1.attr('x'),
-    y: enemy1.attr('y')
-  }
-
-  endPos = {
-    x: getRandomX(),
-    y: getRandomY()
-  }
+  //console.log('inside ', enemy, ' index ', i);
   return  function(t) {
-    //console.log(enemy1.attr('x'));
     checkCollision(enemy1);
-
+    startPos = {
+      x: enemy1.attr('x'),
+      y: enemy1.attr('y')
+    }
+    endPos = {
+      x: once(getRandomX)(),
+      y: once(getRandomY)()
+    }
+    //console.log('x=', endPos.x, ' y=', endPos.y, ' i =', i);
+    //console.log(startPos);
     enemyNextPos = {
       x: parseFloat(startPos.x) + parseFloat((endPos.x - startPos.x)*t),
       y: parseFloat(startPos.y) + parseFloat((endPos.y - startPos.y)*t)
@@ -105,13 +117,6 @@ var tweenWithCollisions = function(enemy) {
     enemy1.attr('y', enemyNextPos.y);
   }
 }
-// asteroids.transition()
-//   .duration(1000)
-//   .attr('r', 10)
-//   .transition()
-//   .duration(2000)
-//   .tween('custom', tweenWithCollisions)
-
 
 
 var updasteScore = function() {
@@ -124,16 +129,3 @@ var updasteScore = function() {
 }
 
 setInterval(updasteScore, 50);
-
-
-// var tweenWithCollisionDetection = function(endData) {
-//     var enemy = d3.select(this);
-
-//     var startPos = {};
-//     var endPos = {};
-
-//     startPos.x = parseFloat(enemy.attr('x'));
-//     startPos.y = parseFloat(enemy.attr('y'));
-
-//     endPos.x = axes.x(endData.x);
-//     endPos.y = axes.y(endData.y);
