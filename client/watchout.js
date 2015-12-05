@@ -3,6 +3,9 @@ var board = d3.select('body').append('svg');
 
 var height = 600;
 var width = 800;
+var score = 0;
+var highScore = 0;
+var collision = 0;
 
 var nEnemies = 30;
 var asteroidData = [];
@@ -37,11 +40,10 @@ asteroids = board.selectAll('image')
 
 
 var moveAsteroids = function() {
-  asteroids.transition()
-    .attr('x', function(d) {d.x = getRandomX(); return d.x})
-    .attr('y', function(d) {d.y = getRandomY(); return d.y})
-    .duration(1000)
-    .tween('custom', checkCollision);
+  asteroids
+    .transition()
+    .tween('attr', tweenWithCollisions)
+    .duration(2000)
 }
 
 setInterval(moveAsteroids, 1000);
@@ -66,13 +68,72 @@ board.on('mousemove', function(){
 
 var checkCollision =function(enemy, callback)  {
   var player = window.player.data()[0];
-  var radius = parseFloat(enemy.r) + 10;
-  var xDiff = parseFloat(enemy.x) - player.x
-  var yDiff = parseFloat(enemy.y) - player.y
+  var radius = parseFloat(enemy.attr('r')) + 10;
+  var xDiff = parseFloat(enemy.attr('x'))- player.x
+  var yDiff = parseFloat(enemy.attr('y')) - player.y
 
   var separation = Math.sqrt( Math.pow(xDiff,2) + Math.pow(yDiff,2));
  
   if (separation < radius*2) {
-    console.log(radius);
+    score = 0;
+    d3.select('.collisions span').text(++collision);
   }
 }
+
+var tweenWithCollisions = function(enemy) {
+  var enemy1 = d3.select(this);
+  console.log('inside ', enemy);
+  startPos = {
+    x: enemy1.attr('x'),
+    y: enemy1.attr('y')
+  }
+
+  endPos = {
+    x: getRandomX(),
+    y: getRandomY()
+  }
+  return  function(t) {
+    //console.log(enemy1.attr('x'));
+    checkCollision(enemy1);
+
+    enemyNextPos = {
+      x: parseFloat(startPos.x) + parseFloat((endPos.x - startPos.x)*t),
+      y: parseFloat(startPos.y) + parseFloat((endPos.y - startPos.y)*t)
+    }
+    //console.log(enemyNextPos.x);
+    enemy1.attr('x', enemyNextPos.x);
+    enemy1.attr('y', enemyNextPos.y);
+  }
+}
+// asteroids.transition()
+//   .duration(1000)
+//   .attr('r', 10)
+//   .transition()
+//   .duration(2000)
+//   .tween('custom', tweenWithCollisions)
+
+
+
+var updasteScore = function() {
+  score++;
+  if(score > highScore) {
+   highScore = score;
+  }
+  d3.select('.current span').text(score);
+  d3.select('.high span').text(highScore);
+}
+
+setInterval(updasteScore, 50);
+
+
+// var tweenWithCollisionDetection = function(endData) {
+//     var enemy = d3.select(this);
+
+//     var startPos = {};
+//     var endPos = {};
+
+//     startPos.x = parseFloat(enemy.attr('x'));
+//     startPos.y = parseFloat(enemy.attr('y'));
+
+//     endPos.x = axes.x(endData.x);
+//     endPos.y = axes.y(endData.y);
